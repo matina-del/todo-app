@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的待办事项</title>
+    <style>
+        /* CSS 样式代码 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #ffc3d5 0%, #d4a5e8 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .input-container {
+            display: flex;
+            margin-bottom: 25px;
+        }
+
+        #taskInput {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        #taskInput:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #addBtn {
+            padding: 12px 20px;
+            background-color: #b794f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+
+       #addBtn:hover {
+  background-color: #9b6fe0;
+}
+
+        #taskList {
+            list-style: none;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .task-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .task-text {
+            flex: 1;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .task-text.completed {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .task-item button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 8px;
+            transition: opacity 0.3s;
+        }
+        
+        .task-item button:hover {
+            opacity: 0.8;
+        }
+
+       .complete-btn {
+  background-color: #ff9eb8;
+}
+        
+        .delete-btn {
+            background-color: #dc3545;
+        }
+        
+        .stats {
+            text-align: center;
+            margin-top: 25px;
+            color: #666;
+            font-size: 14px;
+        }
+
+.clear-btn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #ff6b9d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.clear-btn:hover {
+    background-color: #ff4d7d;
+    transform: scale(1.05);
+}
+
+.clear-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>📝 我的待办事项</h1>
+        <div class="input-container">
+            <input type="text" id="taskInput" placeholder="输入新的任务..." maxlength="100">
+            <button id="addBtn">添加</button>
+        </div>
+        <ul id="taskList"></ul>
+        <div class="stats">
+    <span>总任务数: <strong id="totalTasks">0</strong></span> | 
+    <span>已完成: <strong id="completedTasks">0</strong></span>
+      
+  
+
+    <button id="clearCompletedBtn" class="clear-btn">🗑️ 清空已完成任务</button>
+</div>
+
+
+    <script>
+        // ========== 元素获取 ==========
+        const taskInput = document.getElementById("taskInput");
+        const addBtn = document.getElementById("addBtn");
+        const taskList = document.getElementById("taskList");
+        const totalTasksEl = document.getElementById("totalTasks");
+        const completedTasksEl = document.getElementById("completedTasks");
+const clearCompletedBtn = document.getElementById("clearCompletedBtn");
+
+
+        // ========== 数据管理 ==========
+        let tasks = [];
+
+        function loadTasks() {
+            const savedTasks = localStorage.getItem("myTodoTasks");
+            if (savedTasks) {
+                tasks = JSON.parse(savedTasks);
+            }
+        }
+
+        function saveTasks() {
+            localStorage.setItem("myTodoTasks", JSON.stringify(tasks));
+        }
+
+        // ========== 核心功能函数 ==========
+        function renderTasks() {
+            taskList.innerHTML = "";
+
+            if (tasks.length === 0) {
+                taskList.innerHTML = `<li class="empty-state">🎉 恭喜你，所有任务都完成了！</li>`;
+                updateStats();
+                return;
+            }
+
+            tasks.forEach(task => {
+                const li = document.createElement("li");
+                li.className = "task-item";
+                
+                const taskTextSpan = document.createElement('span');
+                taskTextSpan.className = 'task-text';
+                taskTextSpan.textContent = task.text;
+                if (task.completed) {
+                    taskTextSpan.classList.add('completed');
+                }
+
+                const completeBtn = document.createElement('button');
+                completeBtn.className = 'complete-btn';
+                completeBtn.textContent = task.completed ? '取消' : '完成';
+                completeBtn.onclick = function() {
+                    toggleTask(task.id);
+                };
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = '删除';
+                deleteBtn.onclick = function() {
+                    deleteTask(task.id);
+                };
+
+                li.appendChild(taskTextSpan);
+                li.appendChild(completeBtn);
+                li.appendChild(deleteBtn);
+                taskList.appendChild(li);
+            });
+
+            updateStats();
+        }
+// 清空已完成任务
+function clearCompletedTasks() {
+    const completedCount = tasks.filter(t => t.completed).length;
+    
+    if (completedCount === 0) {
+        alert("没有已完成的任务需要清空！");
+        return;
+    }
+    
+    if (confirm(`确定要清空 ${completedCount} 个已完成的任务吗？`)) {
+        tasks = tasks.filter(t => !t.completed);
+        saveTasks();
+        renderTasks();
+    }
+}
+
+
+        function updateStats() {
+            const total = tasks.length;
+            const completed = tasks.filter(task => task.completed).length;
+            totalTasksEl.textContent = total;
+            completedTasksEl.textContent = completed;
+        }
+
+        function addTask() {
+            const taskText = taskInput.value.trim();
+            if (taskText === "") {
+                alert("请输入任务内容！");
+                return;
+            }
+
+            console.log("准备添加新任务：", taskText);
+
+            const newTask = {
+                id: Date.now(),
+                text: taskText,
+                completed: false
+            };
+
+            tasks.push(newTask);
+            taskInput.value = "";
+            saveTasks();
+            renderTasks();
+        }
+
+        function toggleTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                saveTasks();
+                renderTasks();
+            }
+        }
+
+        function deleteTask(taskId) {
+            if (confirm("确定要删除这个任务吗？")) {
+                tasks = tasks.filter(t => t.id !== taskId);
+                saveTasks();
+                renderTasks();
+            }
+        }
+
+        // ========== 事件监听 ==========
+        addBtn.addEventListener("click", addTask);
+
+        taskInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                addTask();
+            }
+        });
+
+// 监听"清空已完成"按钮的点击
+clearCompletedBtn.addEventListener("click", clearCompletedTasks);
+        window.addEventListener("DOMContentLoaded", () => {
+            loadTasks();
+            renderTasks();
+        });
+
+    </script>
+
+</body>
+</html>
